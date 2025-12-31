@@ -50,8 +50,6 @@ on processBillingEmail(aMessage)
 	if parsedResult is missing value then return
 	set {bankName, balance, dateDue, minPayment} to {bankName, balance, dateDue, minPayment} of parsedResult
 	
-	do shell script "/usr/bin/logger " & quoted form of ("balance: " & balance & ", dateDue: " & dateDue & ", minPayment: " & minPayment)
-	
 	my createReminderFor(bankName, dateDue, balance, minPayment)
 	
 end processBillingEmail
@@ -59,6 +57,7 @@ end processBillingEmail
 
 (*
 Create a new reminder in the default list with the given title and properties.
+If dateDue parsing fails, it will use the current date.
 
 Parameters:
 bankName - the name of the bank (optional)
@@ -75,8 +74,6 @@ on createReminderFor(bankName, dateDue, balance, minPayment)
 	else
 		set reminderTitle to bankName & ": " & reminderPrefix
 	end if
-	set normalizedDueDate to dateDue - 0
-	
 	-- create a new reminder in the default list with the given title and properties. 
 	-- If the default list does not exist, it will be created. 
 	-- The reminder will have the given priority, flagged status, body, and due date.
@@ -90,7 +87,13 @@ on createReminderFor(bankName, dateDue, balance, minPayment)
 			set priority to defaultPriority
 			set flagged to defaultFlagged
 			set body to ("Balance: " & balance & return & "Minimum Payment: " & minPayment)
-			set allday due date to normalizedDueDate
+			-- safely set the due date with fallback
+			try
+				set allday due date to date dateDue
+			on error
+				-- if date parsing fails, use a default current date
+				set allday due date to (current date)
+			end try
 		end tell
 	end tell
 end createReminderFor
@@ -295,7 +298,7 @@ Returns the modified text
 *)
 on uppercaseText(t)
 	if t is missing value then return t
-	return do shell script "echo " & quoted form of t & " | tr '[:lower:]' '[:upper:]'"
+	return do shell script "/bin/echo " & quoted form of t & " | /usr/bin/tr '[:lower:]' '[:upper:]'"
 end uppercaseText
 
 (*
