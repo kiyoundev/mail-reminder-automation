@@ -87,9 +87,8 @@ on createReminderFor(bankName, dateDue, balance, minPayment)
 			set priority to defaultPriority
 			set flagged to defaultFlagged
 			set body to ("Balance: " & balance & return & "Minimum Payment: " & minPayment)
-			-- safely set the due date with fallback
 			try
-				set allday due date to date dateDue
+				set allday due date to dateDue
 			on error
 				-- if date parsing fails, use a default current date
 				set allday due date to (current date)
